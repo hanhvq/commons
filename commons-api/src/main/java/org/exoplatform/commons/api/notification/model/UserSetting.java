@@ -27,6 +27,10 @@ import org.exoplatform.container.PortalContainer;
  * User setting notification
  */
 
+/**
+ * @author hanhvq
+ *
+ */
 public class UserSetting {
   private static UserSetting defaultSetting = null;
   
@@ -45,9 +49,13 @@ public class UserSetting {
 
   private boolean     isActive = true;
 
+  private boolean     isIntranetActive = true;
+
   private Calendar     lastUpdateTime;
 
   private String       userId;
+
+  private List<String> intranetPlugins;
 
   private List<String> instantlyProviders;
 
@@ -56,6 +64,7 @@ public class UserSetting {
   private List<String> weeklyProviders;
 
   public UserSetting() {
+    this.intranetPlugins = new ArrayList<String>();
     this.instantlyProviders = new ArrayList<String>();
     this.dailyProviders = new ArrayList<String>();
     this.weeklyProviders = new ArrayList<String>();
@@ -78,6 +87,20 @@ public class UserSetting {
    */
   public void setActive(boolean isActive) {
     this.isActive = isActive;
+  }
+
+  /**
+   * @return
+   */
+  public boolean isIntranetActive() {
+    return isIntranetActive;
+  }
+
+  /**
+   * @param isIntranetActive
+   */
+  public void setIntranetActive(boolean isIntranetActive) {
+    this.isIntranetActive = isIntranetActive;
   }
 
   /**
@@ -108,6 +131,27 @@ public class UserSetting {
   public UserSetting setLastUpdateTime(Calendar lastUpdateTime) {
     this.lastUpdateTime = lastUpdateTime;
     return this;
+  }
+
+  /**
+   * @return the intranetPlugins
+   */
+  public List<String> getIntranetPlugins() {
+    return intranetPlugins;
+  }
+
+  /**
+   * @param intranetPlugins the intranetPlugins to set
+   */
+  public void setIntranetPlugins(List<String> intranetPlugins) {
+    this.intranetPlugins = intranetPlugins;
+  }
+
+  /**
+   * @param intranetPluginId the intranetPlugin to add
+   */
+  public void addIntranetPlugin(String intranetPluginId) {
+    this.intranetPlugins.add(intranetPluginId);
   }
 
   /**
@@ -178,6 +222,14 @@ public class UserSetting {
    * @param providerId
    * @return
    */
+  public boolean isInIntranet(String providerId) {
+    return (intranetPlugins.contains(providerId)) ? true : false;
+  }
+  
+  /**
+   * @param providerId
+   * @return
+   */
   public boolean isInDaily(String providerId) {
     return (dailyProviders.contains(providerId)) ? true : false;
   }
@@ -205,9 +257,11 @@ public class UserSetting {
   public UserSetting clone() {
     UserSetting setting = getInstance();
     setting.setActive(isActive);
+    setting.setIntranetActive(isIntranetActive);
     setting.setDailyProviders(dailyProviders);
     setting.setWeeklyProviders(weeklyProviders);
     setting.setInstantlyProviders(instantlyProviders);
+    setting.setIntranetPlugins(intranetPlugins);
     setting.setUserId(userId);
     return setting;
   }
@@ -252,9 +306,14 @@ public class UserSetting {
       
       defaultSetting = getInstance();
       defaultSetting.setActive(true);
+      defaultSetting.setIntranetActive(true);
       for (PluginInfo providerData : providerDatas) {
         for (String defaultConf : providerData.getDefaultConfig()) {
-          defaultSetting.addProvider(providerData.getType(), FREQUENCY.getFrequecy(defaultConf));
+          FREQUENCY f = FREQUENCY.getFrequecy(defaultConf);
+          defaultSetting.addProvider(providerData.getType(), f);
+          if(f == FREQUENCY.INSTANTLY) {
+            defaultSetting.addIntranetPlugin(providerData.getType());
+          }
         }
       }
     }

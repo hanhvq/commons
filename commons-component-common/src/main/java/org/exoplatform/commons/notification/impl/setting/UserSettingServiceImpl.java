@@ -84,10 +84,13 @@ public class UserSettingServiceImpl extends AbstractService implements UserSetti
 
     String userId = model.getUserId();
     String instantlys = NotificationUtils.listToString(model.getInstantlyProviders());
+    String intranets = NotificationUtils.listToString(model.getIntranetPlugins());
     String dailys = NotificationUtils.listToString(model.getDailyProviders());
     String weeklys = NotificationUtils.listToString(model.getWeeklyProviders());
 
     saveUserSetting(userId, EXO_IS_ACTIVE, String.valueOf(model.isActive()));
+    saveUserSetting(userId, EXO_IS_INTRANET_ACTIVE, String.valueOf(model.isIntranetActive()));
+    saveUserSetting(userId, EXO_INTRANET_NOTIF, intranets);
     saveUserSetting(userId, EXO_INSTANTLY, instantlys);
     saveUserSetting(userId, EXO_DAILY, dailys);
     saveUserSetting(userId, EXO_WEEKLY, weeklys);
@@ -114,6 +117,7 @@ public class UserSettingServiceImpl extends AbstractService implements UserSetti
     if (instantlys != null) {
       model.setUserId(userId);
       model.setActive(isActive(userId));
+      model.setIntranetActive(isIntranetActive(userId));
       model.setInstantlyProviders(instantlys);
       model.setDailyProviders(getArrayListValue(userId, EXO_DAILY, Collections.<String> emptyList()));
       model.setWeeklyProviders(getArrayListValue(userId, EXO_WEEKLY, Collections.<String> emptyList()));
@@ -140,6 +144,14 @@ public class UserSettingServiceImpl extends AbstractService implements UserSetti
 
   private boolean isActive(String userId) {
     SettingValue<String> values = getSettingValue(userId, EXO_IS_ACTIVE);
+    if (values != null) {
+      return Boolean.valueOf(values.getValue());
+    }
+    return false;
+  }
+  
+  private boolean isIntranetActive(String userId) {
+    SettingValue<String> values = getSettingValue(userId, EXO_IS_INTRANET_ACTIVE);
     if (values != null) {
       return Boolean.valueOf(values.getValue());
     }
@@ -275,6 +287,22 @@ public class UserSettingServiceImpl extends AbstractService implements UserSetti
     return userIds;
   }
   
+  public List<String> getUserHasIntranetNotifSetting(String pluginId) {
+    SessionProvider sProvider = NotificationSessionManager.getOrCreateSessionProvider();;
+    List<String> userIds = new ArrayList<String>();
+    try {
+      NodeIterator iter = getUserHasIntranetNotifSettingItr(sProvider, pluginId);
+      while (iter != null && iter.hasNext()) {
+        Node node = iter.nextNode();
+        userIds.add(node.getParent().getName());
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to get all users have the " + pluginId + " in settings", e);
+    }
+
+    return userIds;
+  }
+  
   /**
    * Gets the all of the userId who has already plugin setting.
    * 
@@ -303,6 +331,33 @@ public class UserSettingServiceImpl extends AbstractService implements UserSetti
     return query.execute().getNodes();
   }
 
+  /**
+   * Gets the all of the userId who has intranet notification setting.
+   * 
+   * @param sProvider
+   * @param pluginId
+   * @return
+   * @throws Exception
+   */
+  private NodeIterator getUserHasIntranetNotifSettingItr(SessionProvider sProvider, String pluginId) throws Exception {
+    Session session = getSession(sProvider, workspace);
+    if(session.getRootNode().hasNode(SETTING_USER_PATH) == false) {
+      return null;
+    }
+    
+    StringBuilder strQuery = new StringBuilder("SELECT * FROM ").append(STG_SCOPE);
+    strQuery.append(" WHERE ").append(EXO_IS_INTRANET_ACTIVE).append("='true' AND (")
+            .append(EXO_INTRANET_NOTIF).append("='").append(pluginId).append("'")
+            .append(" OR ").append(EXO_INTRANET_NOTIF).append(" LIKE '%,").append(pluginId).append(",%'")
+            .append(" OR ").append(EXO_INTRANET_NOTIF).append(" LIKE '%,").append(pluginId).append("'")
+            .append(" OR ").append(EXO_INTRANET_NOTIF).append(" LIKE '").append(pluginId).append(",%'")
+            .append(")");
+    
+    QueryManager qm = session.getWorkspace().getQueryManager();
+    QueryImpl query = (QueryImpl) qm.createQuery(strQuery.toString(), Query.SQL);
+    return query.execute().getNodes();
+  }
+  
   /**
    * Gets these plugins what configured the daily
    * 
@@ -376,7 +431,9 @@ public class UserSettingServiceImpl extends AbstractService implements UserSetti
     model.setDailyProviders(getValues(node, EXO_DAILY));
     model.setWeeklyProviders(getValues(node, EXO_WEEKLY));
     model.setInstantlyProviders(getValues(node, EXO_INSTANTLY));
+    model.setIntranetPlugins(getValues(node, EXO_INTRANET_NOTIF));
     model.setActive(node.getProperty(EXO_IS_ACTIVE).getBoolean());
+    model.setIntranetActive(node.getProperty(EXO_IS_INTRANET_ACTIVE).getBoolean());
     model.setLastUpdateTime(node.getParent().getProperty(EXO_LAST_MODIFIED_DATE).getDate());
     return model;
   }
