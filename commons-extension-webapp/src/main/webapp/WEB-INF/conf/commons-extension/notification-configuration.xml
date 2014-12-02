@@ -286,7 +286,50 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
-
+  
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.api.notification.service.setting.ChannelSettingService</target-component>
+    <component-plugin>
+      <name>notification.channel</name>
+      <set-method>registerNotifChannelPlugin</set-method>
+      <type>org.exoplatform.commons.api.notification.plugin.NotificationChannelPlugin</type>
+      <description>Initialize default Channels.</description>
+      <init-params>
+        <object-param>
+          <name>email.channel</name>
+          <description>Email Notifications Channel</description>
+          <object type="org.exoplatform.commons.api.notification.plugin.config.ChannelConfig">
+            <field name="id">
+              <string>email</string>
+            </field>
+            <field name="resourceBundleKey">
+              <string>UINotification.label.channel.EmailNotificationChannel</string>
+            </field>
+            <field name="order">
+              <string>1</string>
+            </field>
+          </object>
+        </object-param>
+       
+        <object-param>
+          <name>intranet.channel</name>
+          <description>Intranet Notifications Channel</description>
+          <object type="org.exoplatform.commons.api.notification.plugin.config.ChannelConfig">
+            <field name="id">
+              <string>intranet</string>
+            </field>
+            <field name="resourceBundleKey">
+              <string>UINotification.label.channel.IntranetNotificationsChannel</string>
+            </field>
+            <field name="order">
+              <string>2</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
   <external-component-plugins>
     <target-component>org.exoplatform.services.jcr.ext.hierarchy.NodeHierarchyCreator</target-component>
     <component-plugin>
